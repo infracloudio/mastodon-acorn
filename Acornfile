@@ -1,8 +1,14 @@
+name:        "Mastodon Acorn"
+description: "Running Masotdon on Acorn"
+readme:      "./README.md"
+icon:        "./mastodon.svg"
+
+
 services: postgres: {
 	image: "ghcr.io/acorn-io/postgres:v#.#-#"
 }
 
-services: redis: image: "ghcr.io/acorn-io/redis:v#.#.#-#"
+services: redis: image: "ghcr.io/slayer321/redis:v0.0.1"
 
 
 args: {
@@ -18,12 +24,9 @@ args: {
 containers:  {
     web: {
         image: "ghcr.io/mastodon/mastodon:v4.2.0" 
-        cmd: ["bash", "-c", "bundle exec rake db:setup; rm -f /mastodon/tmp/pids/server.pid; bundle exec rails s -p 3000"]
+        cmd: ["bash", "-c", "mkdir /mastodon/public/system; bundle exec rake db:setup; rm -f /mastodon/tmp/pids/server.pid; bundle exec rails s -p 3000"]
         ports: publish:"3000:3000/http"
         consumes: ["postgres", "redis"]
-        dirs: {
-            "/mastodon/public/system": "volume://public-system"
-        }
         env:{
             LOCAL_DOMAIN: "on-acorn.io"
             WEB_DOMAIN: "@{services.nginx.endpoint}"
@@ -75,11 +78,8 @@ containers:  {
     }
     sidekiq:{
         image: "ghcr.io/mastodon/mastodon:v4.2.0"
-        cmd: ["bundle","exec","sidekiq"]
+        cmd: ["bash", "-c", "bundle exec sidekiq"]
         consumes: ["postgres", "redis"]
-        dirs: {
-            "/mastodon/public/system": "volume://public-system"
-        }
         env:{
             LOCAL_DOMAIN: "on-acorn.io"
             WEB_DOMAIN: "@{services.nginx.endpoint}"
@@ -117,11 +117,4 @@ containers:  {
         dependsOn: ["web","streaming","sidekiq"]
     }
 
-}
-
-
-volumes: {
-  "public-system": {
-
-  }
 }
