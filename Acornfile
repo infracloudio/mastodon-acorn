@@ -1,0 +1,120 @@
+name:        "Mastodon Acorn"
+description: "Running Masotdon on Acorn"
+readme:      "./README.md"
+icon:        "./mastodon.svg"
+
+
+services: postgres: {
+	image: "ghcr.io/acorn-io/postgres:v#.#-#"
+}
+
+services: redis: image: "ghcr.io/slayer321/redis:v0.0.1"
+
+
+args: {
+    smtp_port: "587"
+    smtp_server: ""
+    smtp_login: ""
+    smtp_password: ""
+    smtp_auth_method: "plain"
+    smtp_openssl_verify_mode: "none"
+    smtp_from_address: "AcornSocial <notification@on-acorn.io>"
+}
+
+containers:  {
+    web: {
+        image: "ghcr.io/mastodon/mastodon:v4.2.0" 
+        cmd: ["bash", "-c", "mkdir /mastodon/public/system; bundle exec rake db:setup; rm -f /mastodon/tmp/pids/server.pid; bundle exec rails s -p 3000"]
+        ports: publish:"3000:3000/http"
+        consumes: ["postgres", "redis"]
+        env:{
+            LOCAL_DOMAIN: "on-acorn.io"
+            WEB_DOMAIN: "@{services.nginx.endpoint}"
+            ALTERNATE_DOMAINS: "@{services.web.endpoint},@{services.streaming.endpoint}"
+            REDIS_HOST: "@{service.redis.address}"
+            REDIS_PASSWORD: "@{service.redis.secrets.admin.token}"
+            DB_HOST: "@{service.postgres.address}"
+            DB_USER: "@{service.postgres.secrets.admin.username}"
+            DB_NAME: "@{service.postgres.data.dbName}"
+            DB_PASS: "@{service.postgres.secrets.admin.password}"
+            DB_PORT: "@{service.postgres.port.5432}"
+            SMTP_PORT: args.smtp_port
+            SMTP_SERVER: args.smtp_server
+            SMTP_LOGIN: args.smtp_login
+            SMTP_PASSWORD: args.smtp_password
+            SMTP_AUTH_METHOD: args.smtp_auth_method
+            SMTP_OPENSSL_VERIFY_MODE: args.smtp_openssl_verify_mode
+            SMTP_FROM_ADDRESS: args.smtp_from_address
+            SECRET_KEY_BASE: "8aa93f4d2ec3af091a451bb7a655ccbfd6b24cf4ee89c50cee46c42b97e6b65dc2a54dbed3630dd8ac37d333568c5664655a392d12be0cb4a60c093aef4ab3ff"
+            OTP_SECRET: "f7476f4efe8597ce1d1be7240b1029e570eaacc7dfd2bb470ca03721c3e413b44bb87c84e2feb9f30a1517851813c95ae0e680f31487a3c9510652382e646a05"
+        }
+    }
+    streaming:{
+        image: "ghcr.io/mastodon/mastodon:v4.2.0"
+        cmd: ["node","./streaming"]
+        consumes: ["postgres", "redis"]
+        ports: publish:"4000:4000/http"
+        env:{
+            LOCAL_DOMAIN: "on-acorn.io"
+            WEB_DOMAIN: "@{services.nginx.endpoint}"
+            ALTERNATE_DOMAINS: "@{services.web.endpoint},@{services.streaming.endpoint}"
+            REDIS_HOST: "@{service.redis.address}"
+            REDIS_PASSWORD: "@{service.redis.secrets.admin.token}"
+            DB_HOST: "@{service.postgres.address}"
+            DB_USER: "@{service.postgres.secrets.admin.username}"
+            DB_NAME: "@{service.postgres.data.dbName}"
+            DB_PASS: "@{service.postgres.secrets.admin.password}"
+            DB_PORT: "@{service.postgres.port.5432}"
+            SMTP_PORT: args.smtp_port
+            SMTP_SERVER: args.smtp_server
+            SMTP_LOGIN: args.smtp_login
+            SMTP_PASSWORD: args.smtp_password
+            SMTP_AUTH_METHOD: args.smtp_auth_method
+            SMTP_OPENSSL_VERIFY_MODE: args.smtp_openssl_verify_mode
+            SMTP_FROM_ADDRESS: args.smtp_from_address
+            SECRET_KEY_BASE: "8aa93f4d2ec3af091a451bb7a655ccbfd6b24cf4ee89c50cee46c42b97e6b65dc2a54dbed3630dd8ac37d333568c5664655a392d12be0cb4a60c093aef4ab3ff"
+            OTP_SECRET: "f7476f4efe8597ce1d1be7240b1029e570eaacc7dfd2bb470ca03721c3e413b44bb87c84e2feb9f30a1517851813c95ae0e680f31487a3c9510652382e646a05"
+      }
+    }
+    sidekiq:{
+        image: "ghcr.io/mastodon/mastodon:v4.2.0"
+        cmd: ["bash", "-c", "bundle exec sidekiq"]
+        consumes: ["postgres", "redis"]
+        env:{
+            LOCAL_DOMAIN: "on-acorn.io"
+            WEB_DOMAIN: "@{services.nginx.endpoint}"
+            ALTERNATE_DOMAINS: "@{services.web.endpoint},@{services.streaming.endpoint}"
+            REDIS_HOST: "@{service.redis.address}"
+            REDIS_PASSWORD: "@{service.redis.secrets.admin.token}"
+            DB_HOST: "@{service.postgres.address}"
+            DB_USER: "@{service.postgres.secrets.admin.username}"
+            DB_NAME: "@{service.postgres.data.dbName}"
+            DB_PASS: "@{service.postgres.secrets.admin.password}"
+            DB_PORT: "@{service.postgres.port.5432}"
+            SMTP_PORT: args.smtp_port
+            SMTP_SERVER: args.smtp_server
+            SMTP_LOGIN: args.smtp_login
+            SMTP_PASSWORD: args.smtp_password
+            SMTP_AUTH_METHOD: args.smtp_auth_method
+            SMTP_OPENSSL_VERIFY_MODE: args.smtp_openssl_verify_mode
+            SMTP_FROM_ADDRESS: args.smtp_from_address
+            SECRET_KEY_BASE: "8aa93f4d2ec3af091a451bb7a655ccbfd6b24cf4ee89c50cee46c42b97e6b65dc2a54dbed3630dd8ac37d333568c5664655a392d12be0cb4a60c093aef4ab3ff"
+            OTP_SECRET: "f7476f4efe8597ce1d1be7240b1029e570eaacc7dfd2bb470ca03721c3e413b44bb87c84e2feb9f30a1517851813c95ae0e680f31487a3c9510652382e646a05"
+      }
+    }
+    nginx: {
+        image: "nginx"
+        ports: publish: "8000:80/http"
+        dirs: {
+        "/etc/nginx/conf.d": "./conf/nginx"
+        }
+        env:{
+            NGINX_ENDPOINT: "@{services.nginx.endpoint}"
+            STREAMING_ENDPOINT: "@{services.streaming.endpoint}"
+            WEB_ENDPOINT: "@{services.web.endpoint}"
+        }
+        cmd: ["/bin/bash", "-c", "envsubst '$${NGINX_ENDPOINT},$${STREAMING_ENDPOINT},$${WEB_ENDPOINT}' < /etc/nginx/conf.d/mastodon.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+        dependsOn: ["web","streaming","sidekiq"]
+    }
+
+}
