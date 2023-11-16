@@ -1,5 +1,5 @@
 name:        "Mastodon Acorn"
-description: "Running Masotdon on Acorn"
+description: "Running Mastodon on Acorn"
 readme:      "./README.md"
 icon:        "./mastodon.svg"
 
