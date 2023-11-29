@@ -2,11 +2,9 @@
 
 [Mastodon](https://joinmastodon.org/) is a free and open-source software for running self-hosted social networking services. It has microblogging features similar to Twitter, which are offered by a large number of independently run nodes, known as instances or servers, each with its own code of conduct, terms of service, privacy policy, privacy options, and content moderation policies.
 
-[Acorn](http://www.acorn.io) is a cloud computing platform with a big free sandbox that anyone can use by registering with a GitHub account. It is designed to simplify running modern  cloud-native apps on the public cloud. You use familiar development and deployment workflows based on mainstream container tools without having to deal with provisioning or configuring any underlying cloud resources. Basically it provides all the power of Kubernetes and Terraform, without any of the complexity.
+[Acorn](http://www.acorn.io), a user-friendly cloud computing platform, simplifies deploying modern cloud-native apps with a free sandbox accessible through GitHub. It streamlines development workflows using mainstream container tools, providing the power of Kubernetes and Terraform without complexity. To deploy, define your application with an [Acornfile](https://docs.acorn.io/reference/acornfile), generating a deployable Acorn Image. This tutorial illustrates provisioning a Mastodon server on Acorn.
 
-To deploy an application on Acorn we need to define our application as an Acornfile, which will produce the Acorn Image that we can deploy on the platform.  In this tutorial, we will explore how to provision Mastodon server on Acorn.
-
-If you’re the kind of person who likes to skip to the end, you can [deploy the sample application in your sandbox now](https://acorn.io/run/ghcr.io/infracloudio/mastodon-acorn:v4.%23.%23-%23?ref=slayer321&name=mastodon)(Click on `Customize before deploying` and provide the SMTP details that is required) and just start poking around in it.  Sandbox deployments in Acorn are restricted by size, and run for two hours, so it should provide plenty of time for you to evaluate and test anything. You can start them over as often as you like, or you can upgrade to a paid Pro account if you want to run something in production. 
+If you want to skip to the end, just click [Run in Acorn](https://acorn.io/run/ghcr.io/infracloudio/mastodon-acorn:v4.%23.%23-%23?ref=slayer321&name=mastodon)(Click on `Customize before deploying` and provide the SMTP details that is required) to launch the app immediately in a free sandbox environment. All you need to join is a GitHub ID to create an account.
 
 If you want to follow along, I’ll walk through the steps to deploy Mastodon Server using Acorn.
 
@@ -14,11 +12,11 @@ _Note: Everything shown in this tutorial can be found in [this repository](https
 
 ## Pre-requisites
 
-- [Acorn CLI](https://docs.acorn.io/installation/installing)
-- Github account to sign up for the Acorn Platform.
+- Acorn CLI: The CLI allows you to interact with the Acorn Runtime as well as Acorn to deploy and manage your applications. Refer to the [Installation documentation](https://docs.acorn.io/installation/installing) to install Acorn CLI for your environment.
+- A GitHub account is required to sign up and use the Acorn Platform.
 
 ## Acorn Login
-Login to the [Acorn Platform](http://beta.acorn.io) using the Github Sign-In option with your Github user.
+Log in to the [Acorn Platform](http://beta.acorn.io) using the GitHub Sign-In option with your GitHub user.
 ![](./assets/acorn-login-page.png)
 
 After the installation of Acorn CLI for your OS, you can login to the Acorn platform.
@@ -27,15 +25,15 @@ $ acorn login beta.acorn.io
 ```
 
 ## Deploying the Mastodon server
-In this post we will deploy Mastodon server.
+In this tutorial we will deploy Mastodon server.
 
 In the Acorn platform, there are two ways you can try this sample application.
 1. Using Acorn platform dashboard.
 2. Using CLI
 
-The First way is the easiest one where, in just a few clicks you can deploy the Mastodon on the platform and start using it. However, if you want to customize the application use the second option.
+The first way is the easiest one where, in just a few clicks you can deploy the Mastodon on the platform and start using it. However, if you want to customize the application use the second option.
 
-## Running the application using Dashboard
+## Deploying Using Acorn Dashboard
 
 In this option you use the published Acorn application image to deploy the Mastodon server in just a few clicks. It allows you to deploy your applications faster without any additional configurations. Let us see below how you can deploy Mastodon server to the Acorn platform dashboard.
 
@@ -46,9 +44,9 @@ In this option you use the published Acorn application image to deploy the Masto
 ![](./assets/select-from-acorn-image.png)
 
    3.2. Provide a name "tech-mastodon”, use the default Region and provide the URL for the Acorn image and you need to select "Advanaced Options" and provide all the details required for smtp server.
-```
-ghcr.io/infracloudio/mastodon-acorn:v4.#.#-#
-```
+   ```
+   ghcr.io/infracloudio/mastodon-acorn:v4.#.#-#
+   ```
 ![](./assets/mastodon-deploy-preview.png)
 
 _Note: The App will be deployed in the Acorn Sandbox Environment. As the App is provisioned on AcornPlatform in the sandbox environment it will only be available for 2 hrs and after that it will be shutdown. Upgrade to a pro account to keep it running longer_.
@@ -60,7 +58,7 @@ _Note: The App will be deployed in the Acorn Sandbox Environment. As the App is 
    ![](./assets/mastodon-homepage.png)
 
 
-## Running the Application using acorn CLI
+## Deploying Using Acorn CLI
 As mentioned previously, running the acorn application using CLI lets you understand the Acornfile. With the CLI option, you can customize the sample app to your requirement or use your Acorn knowledge to run your own Mastodon Server.
 
 To run the application using CLI you first need to clone the source code repository on your machine.
@@ -69,8 +67,17 @@ To run the application using CLI you first need to clone the source code reposit
 $ git clone https://github.com/infracloudio/mastodon-acorn.git
 ```
 Once cloned here’s how the directory structure will look.
+```
 
-![](./assets/mastodon-root-dir.png)
+├── Acornfile
+├── conf
+│   └── nginx
+│       └── mastodon.template
+├── LICENSE
+├── mastodon.svg
+├── README.md
+└── tutorial.md
+```
 
 
 ### Understanding the Acornfile
@@ -79,7 +86,71 @@ We have the Mastodon server ready. Now to run the application we need an Acornfi
 
 Below is the Acornfile for deploying the Mastodon Server that we created earlier:
 
-![](./assets/mastodon-acornfile.png)
+```
+services: postgres: {
+	image: "ghcr.io/acorn-io/postgres:v#.#-#"
+}
+
+services: redis: image: "ghcr.io/acorn-io/redis:v#.#.#-#"         
+
+
+args: {
+    smtp_port: "587"
+    smtp_server: ""
+    ...
+    smtp_from_address: "AcornSocial <notification@on-acorn.io>"
+}
+
+containers:  {
+    web: {
+        image: "ghcr.io/mastodon/mastodon:v4.2.0" 
+        cmd: ["bash", "-c", "mkdir /mastodon/public/system; bundle exec rake db:setup; rm -f /mastodon/tmp/pids/server.pid; bundle exec rails s -p 3000"]
+        ports: publish:"3000:3000/http"
+        consumes: ["postgres", "redis"]
+        env:{
+            LOCAL_DOMAIN: "on-acorn.io"
+            WEB_DOMAIN: "@{services.nginx.endpoint}"
+            ...
+        }
+    }
+    streaming:{
+        image: "ghcr.io/mastodon/mastodon:v4.2.0"
+        cmd: ["node","./streaming"]
+        consumes: ["postgres", "redis"]
+        ports: publish:"4000:4000/http"
+        env:{
+            LOCAL_DOMAIN: "on-acorn.io"
+            WEB_DOMAIN: "@{services.nginx.endpoint}"
+            ...
+      }
+    }
+    sidekiq:{
+        image: "ghcr.io/mastodon/mastodon:v4.2.0"
+        cmd: ["bash", "-c", "bundle exec sidekiq"]
+        consumes: ["postgres", "redis"]
+        env:{
+            LOCAL_DOMAIN: "on-acorn.io"
+            WEB_DOMAIN: "@{services.nginx.endpoint}"
+            ...
+      }
+    }
+    nginx: {
+        image: "nginx"
+        ports: publish: "8000:80/http"
+        dirs: {
+        "/etc/nginx/conf.d": "./conf/nginx"
+        }
+        env:{
+            NGINX_ENDPOINT: "@{services.nginx.endpoint}"
+            STREAMING_ENDPOINT: "@{services.streaming.endpoint}"
+            WEB_ENDPOINT: "@{services.web.endpoint}"
+        }
+        cmd: ["/bin/bash", "-c", "envsubst '$${NGINX_ENDPOINT},$${STREAMING_ENDPOINT},$${WEB_ENDPOINT}' < /etc/nginx/conf.d/mastodon.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+        dependsOn: ["web","streaming","sidekiq"]
+    }
+
+}
+```
 
 There are different components for running Mastodon server
 - web
