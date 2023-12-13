@@ -3,29 +3,57 @@ description: "Running Mastodon on Acorn"
 readme:      "./README.md"
 icon:        "./mastodon.svg"
 
-
-services: postgres: {
-	image: "ghcr.io/acorn-io/postgres:v#.#-#"
+services: postgres: image: "ghcr.io/acorn-io/postgres:v#.#-#"
+services: redis: image: "ghcr.io/acorn-io/redis:v#.#.#-#" 
+services: mariadb: {
+    image: "ghcr.io/acorn-io/mariadb:v10.#.#-#"
+    env: {
+        MARIADB_DATABASE: "postal"
+        MARIADB_ROOT_PASSWORD: "postal"
+        MARIADB_ALLOW_EMPTY_PASSWORD: "yes"
+        MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
+    }
 }
-
-services: redis: image: "ghcr.io/acorn-io/redis:v#.#.#-#"         
-
+services: rabbitmq: {
+    image: "ghcr.io/kedacore/rabbitmq-client:v1.0"
+    env: {
+        RABBITMQ_DEFAULT_USER: "postal"
+        RABBITMQ_DEFAULT_PASS: "postal"
+        RABBITMQ_DEFAULT_VHOST: "postal"
+    }
+}
 
 args: {
     smtp_port: "587"
     smtp_server: ""
     smtp_login: ""
-    smtp_password: ""
     smtp_auth_method: "plain"
     smtp_openssl_verify_mode: "none"
     smtp_from_address: "AcornSocial <notification@on-acorn.io>"
 }
 
 containers:  {
+    postal: {
+        image: "ghcr.io/postalserver/postal:2.1.4"
+        consumes: ["mariadb", "rabbitmq"]
+        entrypoint: "/docker-entrypoint.sh"
+        dirs: {
+            "/config" : "./conf/postal"
+        }
+        env: {
+            POSTAL_CONFIG_ROOT: "/config"
+            KATAPULT_CONFIG_FILE: "/ci-config.yml"
+            WAIT_FOR_TIMEOUT: "90"
+            WAIT_FOR_TARGETS: """
+                mariadb:3306
+                rabbitmq:5672
+            """
+        }
+    }
     web: {
         image: "ghcr.io/mastodon/mastodon:v4.2.0" 
         cmd: ["bash", "-c", "mkdir /mastodon/public/system; bundle exec rake db:setup; rm -f /mastodon/tmp/pids/server.pid; bundle exec rails s -p 3000"]
-        ports: publish:"3000:3000/http"
+        ports: publish: "3000:3000/http"
         consumes: ["postgres", "redis"]
         env:{
             LOCAL_DOMAIN: "on-acorn.io"
@@ -41,7 +69,7 @@ containers:  {
             SMTP_PORT: args.smtp_port
             SMTP_SERVER: args.smtp_server
             SMTP_LOGIN: args.smtp_login
-            SMTP_PASSWORD: args.smtp_password
+            SMTP_PASSWORD: "secret://smtp-sec/password"
             SMTP_AUTH_METHOD: args.smtp_auth_method
             SMTP_OPENSSL_VERIFY_MODE: args.smtp_openssl_verify_mode
             SMTP_FROM_ADDRESS: args.smtp_from_address
@@ -68,7 +96,7 @@ containers:  {
             SMTP_PORT: args.smtp_port
             SMTP_SERVER: args.smtp_server
             SMTP_LOGIN: args.smtp_login
-            SMTP_PASSWORD: args.smtp_password
+            SMTP_PASSWORD: "secret://smtp-sec/password"
             SMTP_AUTH_METHOD: args.smtp_auth_method
             SMTP_OPENSSL_VERIFY_MODE: args.smtp_openssl_verify_mode
             SMTP_FROM_ADDRESS: args.smtp_from_address
@@ -94,7 +122,7 @@ containers:  {
             SMTP_PORT: args.smtp_port
             SMTP_SERVER: args.smtp_server
             SMTP_LOGIN: args.smtp_login
-            SMTP_PASSWORD: args.smtp_password
+            SMTP_PASSWORD: "secret://smtp-sec/password"
             SMTP_AUTH_METHOD: args.smtp_auth_method
             SMTP_OPENSSL_VERIFY_MODE: args.smtp_openssl_verify_mode
             SMTP_FROM_ADDRESS: args.smtp_from_address
@@ -114,7 +142,6 @@ containers:  {
             WEB_ENDPOINT: "@{services.web.endpoint}"
         }
         cmd: ["/bin/bash", "-c", "envsubst '$${NGINX_ENDPOINT},$${STREAMING_ENDPOINT},$${WEB_ENDPOINT}' < /etc/nginx/conf.d/mastodon.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
-        dependsOn: ["web","streaming","sidekiq"]
+        dependsOn: ["postal","web","streaming","sidekiq"]
     }
-
 }
