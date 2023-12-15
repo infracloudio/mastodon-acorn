@@ -6,11 +6,11 @@ It is a free and open-source software for running self-hosted social networking 
 
 This is where [Acorn](http://www.acorn.io) comes in, it is a user-friendly cloud platform, simplifies deploying modern cloud-native apps with a free sandbox accessible through GitHub account. It streamlines development workflows using mainstream container tools, providing the power of Kubernetes and Terraform without complexity.
 
-Deploying on Acorn is simple as defining your application with an [Acornfile](https://docs.acorn.io/reference/acornfile), generating a deployable Acorn Image.
+Deploying on Acorn is simple as defining your application with an [Acornfile](https://docs.acorn.io/reference/acornfile), generating a deployable Acorn Image. In this tutorial, we'll see how to set up your Mastodon server.
 
-In this tutorial, we'll see how to set up your Mastodon server.
+If you wish to proceed directly to the end, simply click the button below and enter the SMTP details to launch the app immediately in a free sandbox environment. All you need to join is a GitHub ID for account creation.
 
-If you want to skip to the end, just click [Run in Acorn](https://acorn.io/run/ghcr.io/infracloudio/mastodon-acorn:v4.%23.%23-%23?ref=slayer321&name=mastodon)(Click on `Customize before deploying` and provide the SMTP details that is required) to launch the app immediately in a free sandbox environment. All you need to join is a GitHub ID to create an account.
+[![Run in Acorn](https://acorn.io/v1-ui/run/badge?image=ghcr.io+infracloudio+mastodon-acorn:v4.%23.%23-%23&ref=sudhanshu456)](https://acorn.io/run/ghcr.io/infracloudio/mastodon-acorn:v4.%23.%23-%23?ref=sudhanshu456&name=tech-mastodon)
 
 > _Note: Everything shown in this tutorial can be found in [this repository](https://github.com/infracloudio/mastodon-acorn)_.
 
